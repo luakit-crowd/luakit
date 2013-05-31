@@ -73,8 +73,9 @@ local function is_running(d)
 end
 
 function do_open(d, w)
-    if d.internal then
-        if d.internal.do_process(d) then
+    local data = download[d]
+    if data.opts.do_process ~= nil then
+        if data.opts.do_process(d) then
             -- Just like it "opens", but for various modules' needs.
         end
     elseif _M.emit_signal("open-file", d.destination, d.mime_type, w) ~= true then
@@ -143,12 +144,12 @@ function add(uri, opts)
         local data = {
             created = capi.luakit.time(),
             id = next_download_id(),
-            internal = opts.data or nil -- Setting up passthrough for internal uses.
+            opts = opts -- Setting up passthrough for internal uses.
         }
         downloads[d] = data
         if not status_timer.started then status_timer:start() end
         _M.emit_signal("download::status", d, downloads[d])
-        if d.internal then
+        if opts.do_process ~= nil then
             open(d) -- Guarantee cb starts if ever exists.
         end
         return true
@@ -173,7 +174,7 @@ end
 function restart(id)
     local d = assert(to_download(id),
         "download.restart() expected valid download object or id")
-    local new_d = add(d.uri, d.opts) -- TODO use soup message from old download
+    local new_d = add(d.uri, downloads[d].opts) -- TODO use soup message from old download
     if new_d then remove(d) end
     return new_d
 end
