@@ -64,9 +64,14 @@ follow_js = [=[
     }
 
     function eval_selector_make_hints(selector) {
-        var elems = document.querySelectorAll(selector), len = elems.length,
+        var elems = document.querySelectorAll(selector.param), len = elems.length,
             win_h = window.innerHeight, win_w = window.innerWidth,
             hints = [], i = 0, j = 0, e, r, top, bottom, left, right;
+		
+		if (selector.func) {
+			elems = selector.func(elems);
+		}
+		len = elems.length;
 
         for (; i < len;) {
             e = elems[i++];
@@ -598,7 +603,7 @@ new_mode("follow", {
             evaluator = evaluator,
         }
 
-        local init_js = string.format([=[luakit_follow.init(%q, %q)]=],
+        local init_js = string.format([=[luakit_follow.init(%s, %q)]=],
             selector, stylesheet)
 
         local size = 0
@@ -704,12 +709,83 @@ add_binds("follow", {
 })
 
 selectors = {
-    clickable = 'a, area, textarea, select, input:not([type=hidden]), button',
-    focus = 'a, area, textarea, select, input:not([type=hidden]), button, body, applet, object',
-    uri = 'a, area',
-    desc = '*[title], img[alt], applet[alt], area[alt], input[alt]',
-    image = 'img, input[type=image]',
-    thumbnail = "a img",
+    clickable = '{ param: "a, area, textarea, select, input:not([type=hidden]), button" }',
+    focus = '{ param: "a, area, textarea, select, input:not([type=hidden]), button, body, applet, object" }',
+    uri = '{ param: "a, area" }',
+    desc = '{ param: "*[title], img[alt], applet[alt], area[alt], input[alt]" }',
+    image = '{ param: "img, input[type=image]" }',
+    thumbnail = '{ param: "a img" }',
+	relevant = [=[{
+		param: "a, area, textarea, select, input:not([type=hidden]), button", 
+		func: function(elems)
+		{
+			/*var elems, i, len = elems.length, result = [], maxSize, count = [], maxCount, out = [];
+			const modifier = 0.6;
+
+			for (i = 0; i < len; i++) {
+				result.push({
+					element: elems[i],
+					//size: parseFloat(window.getComputedStyle(elems[i], null).getPropertyValue('font-size'))
+					size: parseFloat(window.getComputedStyle(elems[i], null).fontSize),
+				});
+			}*/
+			var result = [], maxSize, count = {}, sorta = [], sum = 0, allowed=[];
+			const modifier = 0.6;
+
+			for (var i = 0; i < elems.length; i++) {
+				result.push({
+					element: elems[i],
+					size: parseFloat(window.getComputedStyle(elems[i], null).getPropertyValue('font-size'))
+				});
+			}
+
+			result.forEach(function(x) {
+				if (x.size in count) {
+					count[x.size]++;
+				}
+				else {
+				   count[x.size] = 1;
+				}
+			});
+
+			for (var x in count) {
+				sorta.push({size: x, count: count[x]});
+			}
+
+			sorta.forEach(function (x) {
+				sum += parseFloat(x.size);
+			});
+
+			sorta = sorta.filter(function(x) {
+				return parseFloat(x.size) > sum / sorta.length;
+			});
+
+			maxSize = Math.max.apply(null, sorta.map(function(x) {
+				return x.count;
+			}));
+
+			sorta.forEach(function (x) {
+			//	 if (x.count == maxSize)
+			//	 {
+					allowed.push(parseFloat(x.size));
+			//	 }
+			});
+/*
+			result.forEach(function(x) {
+				if (allowed.indexOf(x.size) != -1) {
+					x.element.style.color = '#00FF00';
+				}
+			});
+			*/
+			result = result.filter(function(x) {
+				return allowed.indexOf(x.size) != -1;
+			});
+
+			return result.map(function (x) {
+				return x.element;	
+			});
+		}
+	}]=]
 }
 
 evaluators = {
@@ -991,6 +1067,15 @@ add_binds("ex-follow", {
                     assert(type(uri) == "string")
                     w:enter_cmd(":winopen " .. uri)
                 end
+            })
+        end),
+
+    key({}, "r", [[Hint all links (as defined by the `follow.selectors.relevant`
+        selector)]],
+        function (w)
+            w:set_mode("follow", {
+                selector = "relevant", evaluator = "click",
+                func = function (s) w:emit_form_root_active_signal(s) end,
             })
         end),
 })
