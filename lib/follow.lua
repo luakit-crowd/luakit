@@ -720,7 +720,7 @@ selectors = {
 		func: function(elems)
 		{
 			var i, result = [], count = {}, unique = [], weightSum = 0, criteria = 0, selected=[];
-            var win_h = window.innerHeight, win_w = window.innerWidth
+            var win_h = window.innerHeight, win_w = window.innerWidth;
 
 			//Create an array of (element, size) pairs
 			for (i = 0; i < elems.length; i++) {
@@ -746,8 +746,7 @@ selectors = {
 			result.forEach(function(x) {
 				if (x.size in count) {
 					count[x.size]++;
-				}
-				else {
+				} else {
 				   count[x.size] = 1;
 				}
 			});
