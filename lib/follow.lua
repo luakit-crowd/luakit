@@ -64,7 +64,7 @@ follow_js = [=[
     }
 
     function eval_selector_make_hints(selector) {
-        var elems = document.querySelectorAll(selector.param), len = elems.length,
+        var elems = document.querySelectorAll(selector.param), len,
             win_h = window.innerHeight, win_w = window.innerWidth,
             hints = [], i = 0, j = 0, e, r, top, bottom, left, right;
 		
@@ -719,26 +719,30 @@ selectors = {
 		param: "a, area, textarea, select, input:not([type=hidden]), button", 
 		func: function(elems)
 		{
-			/*var elems, i, len = elems.length, result = [], maxSize, count = [], maxCount, out = [];
-			const modifier = 0.6;
+			var i, result = [], count = {}, unique = [], weightSum = 0, criteria = 0, selected=[];
+            var win_h = window.innerHeight, win_w = window.innerWidth
 
-			for (i = 0; i < len; i++) {
-				result.push({
-					element: elems[i],
-					//size: parseFloat(window.getComputedStyle(elems[i], null).getPropertyValue('font-size'))
-					size: parseFloat(window.getComputedStyle(elems[i], null).fontSize),
-				});
-			}*/
-			var result = [], maxSize, count = {}, sorta = [], sum = 0, allowed=[];
-			const modifier = 0.6;
+			//Create an array of (element, size) pairs
+			for (i = 0; i < elems.length; i++) {
+				r = elems[i].getClientRects()[0];
 
-			for (var i = 0; i < elems.length; i++) {
+				// Check if element outside viewport (I borrowed that form eval_selector_make_hints ...)
+				if (!r || r.top  > win_h || r.bottom < 0
+					   || r.left > win_w || r.right  < 0)
+				   continue;
+				
+				//Ignore images
+				if(elems[i].getElementsByTagName('img').length > 0) {
+					continue;
+				}
+
 				result.push({
 					element: elems[i],
 					size: parseFloat(window.getComputedStyle(elems[i], null).getPropertyValue('font-size'))
 				});
 			}
-
+		
+			//Group by size and count
 			result.forEach(function(x) {
 				if (x.size in count) {
 					count[x.size]++;
@@ -748,37 +752,30 @@ selectors = {
 				}
 			});
 
+			//Create an array of (size, weight) pairs
 			for (var x in count) {
-				sorta.push({size: x, count: count[x]});
+				unique.push({size: x, weight: Math.sqrt(count[x] + 3/8)});
 			}
 
-			sorta.forEach(function (x) {
-				sum += parseFloat(x.size);
+			unique.forEach(function (x) {
+				weightSum += parseFloat(x.weight);
 			});
 
-			sorta = sorta.filter(function(x) {
-				return parseFloat(x.size) > sum / sorta.length;
+			//Weighted arithmetic mean
+			unique.forEach(function (x) {
+				criteria += parseFloat(x.size) * (x.weight / weightSum);
 			});
 
-			maxSize = Math.max.apply(null, sorta.map(function(x) {
-				return x.count;
-			}));
-
-			sorta.forEach(function (x) {
-			//	 if (x.count == maxSize)
-			//	 {
-					allowed.push(parseFloat(x.size));
-			//	 }
-			});
-/*
-			result.forEach(function(x) {
-				if (allowed.indexOf(x.size) != -1) {
-					x.element.style.color = '#00FF00';
+			//Select sizes according to criteria 
+			unique.forEach(function (x) {
+				if (parseFloat(x.size) > criteria) {
+					selected.push(parseFloat(x.size));
 				}
 			});
-			*/
+
+			//Filter out pairs of selected sizes
 			result = result.filter(function(x) {
-				return allowed.indexOf(x.size) != -1;
+				return selected.indexOf(x.size) != -1;
 			});
 
 			return result.map(function (x) {
