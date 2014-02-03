@@ -719,8 +719,8 @@ selectors = {
 		param: "a, area, textarea, select, input:not([type=hidden]), button", 
 		func: function(elems)
 		{
-			var i, result = [], count = {}, unique = [], weightSum = 0, criteria = 0, selected=[];
-            var win_h = window.innerHeight, win_w = window.innerWidth;
+			var i, size, result = [], count = {}, groups = [], weightSum = 0, criteria = 0, selected = [],
+            win_h = window.innerHeight, win_w = window.innerWidth;
 
 			//Create an array of (element, size) pairs
 			for (i = 0; i < elems.length; i++) {
@@ -736,44 +736,48 @@ selectors = {
 					continue;
 				}
 
+				size = parseFloat(window.getComputedStyle(elems[i], null).getPropertyValue('font-size'));
 				result.push({
 					element: elems[i],
-					size: parseFloat(window.getComputedStyle(elems[i], null).getPropertyValue('font-size'))
-				});
+					size: size,
+ 				});
+
+				//Group by size and count
+				if (r.left < (win_w/3)*2) {	
+					if (size in count) {
+						count[size]++;
+					} else {
+					   count[size] = 1;
+					}
+				}
 			}
 		
-			//Group by size and count
-			result.forEach(function(x) {
-				if (x.size in count) {
-					count[x.size]++;
-				} else {
-				   count[x.size] = 1;
-				}
-			});
-
 			//Create an array of (size, weight) pairs
 			for (var x in count) {
-				unique.push({size: x, weight: Math.sqrt(count[x] + 3/8)});
+				groups.push({size: x, weight: Math.sqrt(count[x])});
 			}
 
-			unique.forEach(function (x) {
+			groups.forEach(function (x) {
 				weightSum += parseFloat(x.weight);
 			});
 
 			//Weighted arithmetic mean
-			unique.forEach(function (x) {
+			groups.forEach(function (x) {
 				criteria += parseFloat(x.size) * (x.weight / weightSum);
 			});
 
 			//Select sizes according to criteria 
-			unique.forEach(function (x) {
+			groups.forEach(function (x) {
 				if (parseFloat(x.size) > criteria) {
 					selected.push(parseFloat(x.size));
 				}
 			});
+			
+			//var min = Math.min.apply(null, selected);
 
 			//Filter out pairs of selected sizes
 			result = result.filter(function(x) {
+				//return x.size >= min;
 				return selected.indexOf(x.size) != -1;
 			});
 
