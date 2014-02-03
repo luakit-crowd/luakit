@@ -67,11 +67,11 @@ follow_js = [=[
         var elems = document.querySelectorAll(selector.param), len,
             win_h = window.innerHeight, win_w = window.innerWidth,
             hints = [], i = 0, j = 0, e, r, top, bottom, left, right;
-		
-		if (selector.func) {
-			elems = selector.func(elems);
-		}
-		len = elems.length;
+        
+        if (selector.func) {
+            elems = selector.func(elems);
+        }
+        len = elems.length;
 
         for (; i < len;) {
             e = elems[i++];
@@ -715,77 +715,77 @@ selectors = {
     desc = '{ param: "*[title], img[alt], applet[alt], area[alt], input[alt]" }',
     image = '{ param: "img, input[type=image]" }',
     thumbnail = '{ param: "a img" }',
-	relevant = [=[{
-		param: "a, area, textarea, select, input:not([type=hidden]), button", 
-		func: function(elems)
-		{
-			var i, size, result = [], count = {}, groups = [], weightSum = 0, criteria = 0, selected = [],
+    relevant = [=[{
+        param: "a, area, textarea, select, input:not([type=hidden]), button", 
+        func: function(elems)
+        {
+            var i, size, result = [], count = {}, groups = [], weightSum = 0, criteria = 0, selected = [],
             win_h = window.innerHeight, win_w = window.innerWidth;
 
-			//Create an array of (element, size) pairs
-			for (i = 0; i < elems.length; i++) {
-				r = elems[i].getClientRects()[0];
+            //Create an array of (element, size) pairs
+            for (i = 0; i < elems.length; i++) {
+                r = elems[i].getClientRects()[0];
 
-				// Check if element outside viewport (I borrowed that form eval_selector_make_hints ...)
-				if (!r || r.top  > win_h || r.bottom < 0
-					   || r.left > win_w || r.right  < 0)
-				   continue;
-				
-				//Ignore images
-				if(elems[i].getElementsByTagName('img').length > 0) {
-					continue;
-				}
+                // Check if element outside viewport (I borrowed that form eval_selector_make_hints ...)
+                if (!r || r.top  > win_h || r.bottom < 0
+                       || r.left > win_w || r.right  < 0)
+                   continue;
+                
+                //Ignore images
+                if(elems[i].getElementsByTagName('img').length > 0) {
+                    continue;
+                }
 
-				size = parseFloat(window.getComputedStyle(elems[i], null).getPropertyValue('font-size'));
-				result.push({
-					element: elems[i],
-					size: size,
- 				});
+                size = parseFloat(window.getComputedStyle(elems[i], null).getPropertyValue('font-size'));
+                result.push({
+                    element: elems[i],
+                    size: size,
+                });
 
-				//Group by size and count
-				if (r.left < (win_w/3)*2) {	
-					if (size in count) {
-						count[size]++;
-					} else {
-					   count[size] = 1;
-					}
-				}
-			}
-		
-			//Create an array of (size, weight) pairs
-			for (var x in count) {
-				groups.push({size: x, weight: Math.sqrt(count[x])});
-			}
+                //Group by size and count
+                if (r.left < (win_w/3)*2) { 
+                    if (size in count) {
+                        count[size]++;
+                    } else {
+                       count[size] = 1;
+                    }
+                }
+            }
+        
+            //Create an array of (size, weight) pairs
+            for (var x in count) {
+                groups.push({size: x, weight: Math.sqrt(count[x])});
+            }
 
-			groups.forEach(function (x) {
-				weightSum += parseFloat(x.weight);
-			});
+            groups.forEach(function (x) {
+                weightSum += parseFloat(x.weight);
+            });
 
-			//Weighted arithmetic mean
-			groups.forEach(function (x) {
-				criteria += parseFloat(x.size) * (x.weight / weightSum);
-			});
+            //Weighted arithmetic mean
+            groups.forEach(function (x) {
+                criteria += parseFloat(x.size) * (x.weight / weightSum);
+            });
 
-			//Select sizes according to criteria 
-			groups.forEach(function (x) {
-				if (parseFloat(x.size) > criteria) {
-					selected.push(parseFloat(x.size));
-				}
-			});
-			
-			//var min = Math.min.apply(null, selected);
+            //Select sizes according to criteria 
+            groups.forEach(function (x) {
+                if (parseFloat(x.size) > criteria) {
+                    selected.push(parseFloat(x.size));
+                }
+            });
+            
+            //var min = Math.min.apply(null, selected);
 
-			//Filter out pairs of selected sizes
-			result = result.filter(function(x) {
-				//return x.size >= min;
-				return selected.indexOf(x.size) != -1;
-			});
+            //Filter out pairs of selected sizes
+            result = result.filter(function(x) {
+                //return x.size >= min;
+                return selected.indexOf(x.size) != -1;
+            });
 
-			return result.map(function (x) {
-				return x.element;	
-			});
-		}
-	}]=]
+            return result.map(function (x) {
+                return x.element;   
+            });
+        }
+    }]=]
 }
 
 evaluators = {
