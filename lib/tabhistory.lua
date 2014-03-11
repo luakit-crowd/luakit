@@ -82,4 +82,10 @@ add_cmds({
     cmd("tabhistory", "list history for tab", window.methods.tab_history),
 })
 
+local buf = lousy.bind.buf
+add_binds("normal", {
+    buf("^zh$", [[List history for tab]], window.methods.tab_history),
+})
+
+
 -- vim: et:sw=4:ts=8:sts=4:tw=80
