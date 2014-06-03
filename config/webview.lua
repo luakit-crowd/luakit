@@ -230,6 +230,21 @@ webview.init_funcs = {
             -- Return false to cancel the request.
         end)
     end,
+
+    -- Action to take on navigation request. This allows us to handle other URI
+    -- schemes that luakit/webkit can't open
+    -- TODO better logic
+    navigation_request_decision = function (view, w)
+        view:add_signal("navigation-request", function (v, uri)
+            if string.match(string.lower(uri), "^magnet:") then
+                luakit.spawn(string.format("%s %q", "xdg-open", uri))
+                return false
+            elseif string.match(string.lower(uri), "^mailto:") then
+                luakit.spawn(string.format("%s %q", "xdg-open", uri))
+                return false
+            end
+        end)
+    end,
 }
 
 -- These methods are present when you index a window instance and no window
