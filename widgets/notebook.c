@@ -118,8 +118,16 @@ luaH_notebook_set_title(lua_State *L)
     widget_t *w = luaH_checkwidget(L, 1);
     widget_t *child = luaH_checkwidget(L, 2);
     const gchar *title = luaL_checklstring(L, 3, &len);
+#if GTK_CHECK_VERSION(3,0,0)
+    GtkWidget *label = gtk_label_new(title);
+    gtk_label_set_ellipsize(GTK_LABEL(label), PANGO_ELLIPSIZE_MIDDLE);
+    gtk_notebook_set_tab_label(GTK_NOTEBOOK(w->widget),
+        child->widget, label);
+    gtk_container_child_set(GTK_CONTAINER(w->widget), label, "tab-expand", TRUE, "tab-fill", TRUE, NULL);
+#else
     gtk_notebook_set_tab_label_text(GTK_NOTEBOOK(w->widget),
         child->widget, title);
+#endif
     return 0;
 }
 
@@ -239,7 +247,7 @@ page_removed_cb(GtkNotebook* UNUSED(n), GtkWidget *widget, guint UNUSED(i),
 }
 
 static void
-switch_cb(GtkNotebook *n, GtkNotebookPage* UNUSED(p), guint i, widget_t *w)
+switch_cb(GtkNotebook *n, GtkWidget* UNUSED(p), guint i, widget_t *w)
 {
     GtkWidget *widget = gtk_notebook_get_nth_page(GTK_NOTEBOOK(n), i);
     widget_t *child = GOBJECT_TO_LUAKIT_WIDGET(widget);

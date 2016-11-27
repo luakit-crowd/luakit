@@ -596,7 +596,11 @@ luaH_webview_newindex(lua_State *L, widget_t *w, luakit_token_t token)
 }
 
 static gboolean
+#if GTK_CHECK_VERSION(3,0,0)
+expose_cb(GtkWidget* UNUSED(widget), cairo_t *UNUSED(e), widget_t *w)
+#else
 expose_cb(GtkWidget* UNUSED(widget), GdkEventExpose* UNUSED(e), widget_t *w)
+#endif
 {
     lua_State *L = globalconf.L;
     luaH_object_push(L, w->ref);
@@ -849,6 +853,16 @@ widget_webview(widget_t *w, luakit_token_t UNUSED(token))
     d->inspector = webkit_web_view_get_inspector(d->view);
 
     d->win = GTK_SCROLLED_WINDOW(gtk_scrolled_window_new(NULL, NULL));
+#if GTK_CHECK_VERSION(3,0,0)
+    GtkStyleContext *context = gtk_widget_get_style_context(GTK_WIDGET(d->win));
+    gtk_widget_set_name(GTK_WIDGET(d->win), "scrolled-window");
+    const gchar *scrollbar_css = "#scrolled-window {-GtkScrolledWindow-scrollbar-spacing: 0;}";
+
+    GtkCssProvider *provider = gtk_css_provider_new();
+    gtk_css_provider_load_from_data(provider, scrollbar_css, strlen(scrollbar_css), NULL);
+
+    gtk_style_context_add_provider(context, GTK_STYLE_PROVIDER(provider), GTK_STYLE_PROVIDER_PRIORITY_APPLICATION);
+#endif
     w->widget = GTK_WIDGET(d->win);
 
     /* add webview to scrolled window */
@@ -871,7 +885,11 @@ widget_webview(widget_t *w, luakit_token_t UNUSED(token))
       "signal::create-web-view",                      G_CALLBACK(create_web_view_cb),           w,
       "signal::document-load-finished",               G_CALLBACK(document_load_finished_cb),    w,
       "signal::download-requested",                   G_CALLBACK(download_request_cb),          w,
+#if GTK_CHECK_VERSION(3,0,0)
+      "signal::draw",                                 G_CALLBACK(expose_cb),                    w,
+#else
       "signal::expose-event",                         G_CALLBACK(expose_cb),                    w,
+#endif
       "signal::hovering-over-link",                   G_CALLBACK(link_hover_cb),                w,
       "signal::key-press-event",                      G_CALLBACK(key_press_cb),                 w,
       "signal::mime-type-policy-decision-requested",  G_CALLBACK(mime_type_decision_cb),        w,
@@ -882,7 +900,10 @@ widget_webview(widget_t *w, luakit_token_t UNUSED(token))
       "signal::populate-popup",                       G_CALLBACK(populate_popup_cb),            w,
       "signal::resource-request-starting",            G_CALLBACK(resource_request_starting_cb), w,
       "signal::scroll-event",                         G_CALLBACK(scroll_event_cb),              w,
+#if GTK_CHECK_VERSION(3,0,0)
+#else
       "signal::size-request",                         G_CALLBACK(size_request_cb),              w,
+#endif
       NULL);
 
     g_object_connect(G_OBJECT(d->win),

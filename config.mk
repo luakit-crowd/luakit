@@ -2,7 +2,7 @@
 
 # Compile/link options.
 CC         ?= gcc
-CFLAGS     += -std=gnu99 -ggdb -W -Wall -Wextra
+CFLAGS     += -std=gnu99 -ggdb -W -Wall -Wextra -DGDK_DISABLE_DEPRECATED -DGTK_DISABLE_DEPRECATED
 LDFLAGS    +=
 CPPFLAGS   +=
 
@@ -65,9 +65,17 @@ endif
 # === Required build packages ================================================
 
 # Packages required to build luakit.
-PKGS += gtk+-2.0
+ifeq ($(USE_GTK3),1)
+	PKGS += gtk+-3.0
+else
+	PKGS += gtk+-2.0
+endif
 PKGS += gthread-2.0
-PKGS += webkit-1.0
+ifeq ($(USE_GTK3),1)
+	PKGS += webkitgtk-3.0
+else
+	PKGS += webkit-1.0
+endif
 PKGS += sqlite3
 PKGS += $(LUA_PKG_NAME)
 
@@ -79,8 +87,8 @@ endif
 
 # Build luakit with libunique bindings? (single instance support)
 ifneq ($(USE_UNIQUE),0)
-	CPPFLAGS += -DWITH_UNIQUE
-	PKGS     += unique-1.0
+#	CPPFLAGS += -DWITH_UNIQUE
+#	PKGS     += unique-3.0
 endif
 
 # Check user has correct packages installed (and found by pkg-config).
